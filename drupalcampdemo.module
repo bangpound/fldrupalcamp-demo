@@ -1,0 +1,115 @@
+<?php
+
+/**
+ * Cycle demo
+ *
+ * Add a cycle slideshow to one or more elements on the page.
+ */
+
+/**
+ * Implement hook_theme().
+ */
+function drupalcampdemo_theme($existing, $type, $theme, $path) {
+  return array(
+    'cycle' => array(
+      'render element' => 'element',
+    ),
+  );
+}
+
+/**
+ * The theme wrapper for the cycle script.
+ */
+function theme_cycle($variables) {
+  $element = $variables['element'];
+
+  // drupal_html_id guarantees a unique ID for the cycle container.
+  $attributes = array(
+    'class' => 'cycle',
+    'id' => drupal_html_id('cycle'),
+  );
+
+  // jQuery Cycle options are specified with the element using the
+  // #cycle_settings property. See http://jquery.malsup.com/cycle/options.html
+  // Note: you cannot pass Javascript callback functions from PHP to JavaScript
+  // without using unholy and potentially insecure JS eval().
+  $cycle_settings = $element['#cycle_settings'];
+  drupal_add_js(libraries_get_path('jquery_cycle') .'/jquery.cycle.min.js');
+  drupal_add_js(drupal_get_path('module', 'drupalcampdemo'). '/cycle.js');
+  drupal_add_js(array('cycle' => array($attributes['id'] => $cycle_settings)), 'setting');
+
+  // The wrapper is a <div> with the ID created above.
+  $output = '<div'. drupal_attributes($attributes) .'>';
+  $output .= $element['#children'];
+  $output .= '</div>';
+  return $output;
+}
+
+/**
+ * Implement hook_page_alter().
+ *
+ * The actions taken in this hook could be taken in any number of other places:
+ * in the original theme, a preprocess function, or any other alter hook that
+ * operates on the element you want to cycle.
+ *
+ * These are suggestions. They won't actually do anything unless you uncomment
+ * a block.
+ */
+function drupalcampdemo_page_alter(&$page) {
+
+  // To cycle nodes on the home page
+  // This works with no extra settings for jQuery Cycle because the theme
+  // wrapper's immediate children are the slide elements.
+  /*
+  if (drupal_is_front_page()) {
+    $page['content']['system_main']['nodes']['#cycle_settings'] = array(
+      'containerResize' => 1,
+    );
+    $page['content']['system_main']['nodes']['#theme_wrappers'][] = 'cycle';
+  }
+  */
+
+  // Sadly, themed Views do not return renderable arrays, so you have to add
+  // more jQuery Cycle options to target the node containers.
+  // This example targets the Views default view "frontpage."
+  /*
+  $item = menu_get_item();
+  if ($item['path'] == 'frontpage') {
+    $page['content']['system_main']['#cycle_settings'] = array(
+      'containerResize' => 1,
+      'slideExpr' => '.views-row',
+    );
+    $page['content']['system_main']['#theme_wrappers'][] = 'cycle';
+  }
+  */
+}
+
+/**
+ * Entity view modes demo
+ */
+
+/**
+ * Implement hook_entity_info_alter().
+ *
+ * This reveals new view modes for node entities. If you don't see your new view
+ * mode in the Field UI's "manage display" screen, you may need to clear cache
+ * or rebuild menus more than once until you do.
+ */
+function drupalcampdemo_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes']['thumbnail'] = array(
+    'label' => t('Thumbnail'),
+    'custom settings' => TRUE,
+  );
+}
+
+/**
+ * Implement hook_preprocess_node().
+ *
+ * Use this to add theme hook suggestions specifically for your view mode.
+ */
+function drupalcampdemo_preprocess_node(&$vars) {
+  $node = $vars['node'];
+  $view_mode = $vars['view_mode'];
+
+  $vars['theme_hook_suggestions'][] = 'node__' . $view_mode;
+}
