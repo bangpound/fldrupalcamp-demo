@@ -3,3 +3,4 @@ name = DrupalCamp Florida Demo
 description = DrupalCamp demo of theme wrappers and entity view modes.
 core = 7.x
 files[] = drupalcampdemo.module
+dependencies[] = libraries
